@@ -6,6 +6,7 @@ export interface ReactPhotoEditorTranslations {
   contrast: string;
   saturate: string;
   grayscale: string;
+  whiteBalance: string;
   reset: string;
   flipHorizontal: string;
   flipVertical: string;

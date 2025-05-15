@@ -30,6 +30,11 @@ interface UsePhotoEditorParams {
   defaultGrayscale?: number;
 
   /**
+   * Initial white balance level (default: 0).
+   */
+  defaultWhiteBalance?: number;
+
+  /**
    * Flip the image horizontally (default: false).
    */
   defaultFlipHorizontal?: boolean;
@@ -77,6 +82,7 @@ export const usePhotoEditor = ({
   defaultContrast = 100,
   defaultSaturate = 100,
   defaultGrayscale = 0,
+  defaultWhiteBalance = 0,
   defaultFlipHorizontal = false,
   defaultFlipVertical = false,
   defaultZoom = 1,
@@ -99,6 +105,8 @@ export const usePhotoEditor = ({
   const [contrast, setContrast] = useState(defaultContrast);
   const [saturate, setSaturate] = useState(defaultSaturate);
   const [grayscale, setGrayscale] = useState(defaultGrayscale);
+  const [whiteBalance, setWhiteBalance] = useState(defaultWhiteBalance);
+
   const [rotate, setRotate] = useState(defaultRotate);
   const [flipHorizontal, setFlipHorizontal] = useState(defaultFlipHorizontal);
   const [flipVertical, setFlipVertical] = useState(defaultFlipVertical);
@@ -148,6 +156,7 @@ export const usePhotoEditor = ({
     contrast,
     saturate,
     grayscale,
+    whiteBalance,
     offsetX,
     offsetY,
   ]);
@@ -224,6 +233,13 @@ export const usePhotoEditor = ({
 
         context.restore();
 
+        if (whiteBalance !== 0) {
+          const imageData = applyWhiteBalance(
+            context.getImageData(0, 0, canvas.width, canvas.height)
+          );
+          context.putImageData(imageData, 0, 0);
+        }
+
         context.filter = 'none';
         redrawDrawingPaths(context);
       }
@@ -284,6 +300,30 @@ export const usePhotoEditor = ({
    */
   const getFilterString = (): string => {
     return `brightness(${brightness}%) contrast(${contrast}%) grayscale(${grayscale}%) saturate(${saturate}%)`;
+  };
+
+  /**
+   * Applies white balance adjustment to the image data.
+   *
+   * @param {ImageData} imageData - The image data to be adjusted.
+   * @returns {ImageData} - The adjusted image data.
+   */
+  const applyWhiteBalance = (imageData: ImageData) => {
+    const data = imageData.data;
+
+    const wbAmount = whiteBalance / 100; // from -1 to +1
+
+    for (let i = 0; i < data.length; i += 4) {
+      data[i] += 255 * wbAmount; // Red
+      data[i + 2] = data[i + 2] - 255 * wbAmount; // Blue
+    }
+
+    // Clamp values between 0 and 255
+    for (let i = 0; i < data.length; i += 1) {
+      data[i] = Math.min(255, Math.max(0, data[i]));
+    }
+
+    return imageData;
   };
 
   /**
@@ -395,6 +435,7 @@ export const usePhotoEditor = ({
     setContrast(defaultContrast);
     setSaturate(defaultSaturate);
     setGrayscale(defaultGrayscale);
+    setWhiteBalance(defaultWhiteBalance);
     setRotate(defaultRotate);
     setFlipHorizontal(defaultFlipHorizontal);
     setFlipVertical(defaultFlipVertical);
@@ -424,6 +465,8 @@ export const usePhotoEditor = ({
     saturate,
     /** Current grayscale level. */
     grayscale,
+    /** Current white balance level. */
+    whiteBalance,
     /** Current rotation angle in degrees. */
     rotate,
     /** Flag indicating if the image is flipped horizontally. */
@@ -454,6 +497,8 @@ export const usePhotoEditor = ({
     setSaturate,
     /** Function to set the grayscale level. */
     setGrayscale,
+    /** Function to set the white balance level. */
+    setWhiteBalance,
     /** Function to set the rotation angle. */
     setRotate,
     /** Function to set the horizontal flip state. */
