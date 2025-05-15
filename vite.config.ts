@@ -1,21 +1,37 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import path from 'path';
+import dts from 'vite-plugin-dts';
+import { libInjectCss } from 'vite-plugin-lib-inject-css';
 
+// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    dts({
+      rollupTypes: true,
+    }),
+    libInjectCss(),
+  ],
   build: {
     lib: {
-      entry: 'src/index.ts',
+      entry: path.resolve(__dirname, 'src/index.tsx'),
       name: 'ReactPhotoEditor',
-      fileName: 'react-photo-editor',
       formats: ['es'],
+      fileName: (format) => `react-photo-editor.${format}.js`,
     },
     rollupOptions: {
+      external: ['react', 'react-dom', 'react/jsx-runtime'],
       output: {
-        preserveModules: true, // ✅ preserve import paths
-        exports: 'named', // ✅ use named exports
+        globals: {
+          react: 'React',
+          'react/jsx-runtime': 'ReactJsxRuntime',
+        },
+        preserveModules: true, // ✅ Preserve module structure
+        preserveModulesRoot: 'src', // ✅ Keeps import paths clean
+        exports: 'named', // ✅ Avoid default-only export mapping
       },
     },
-    minify: false, // ✅ disable minification to keep export names readable
+    minify: false, // ✅ Avoid export name mangling like `ke` and `Be`
   },
 });
